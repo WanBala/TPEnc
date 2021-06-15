@@ -25,7 +25,7 @@ class AesRndNumGen:
 
     def getNewCouple(self, p, q, enc):
         rnd = self.next()
-        sum = p + q
+        sum = int(p) + int(q)
         if sum <= 255:
             if enc:
                 rnd = (p + rnd) % (sum + 1)
@@ -70,8 +70,8 @@ def encryption(image_in, block_size=16, iterations=50):
     pAesRndNumGen = AesRndNumGen(totalRndForPermutation)
 
 
-    pAesRndNumGen.ctr = totalRndForPermutation
-    sAesRndNumGen.ctr = totalRndForSubstitution
+    #pAesRndNumGen.ctr = totalRndForPermutation
+    #sAesRndNumGen.ctr = totalRndForSubstitution
     
     for ccc in range(iterations):
         ### substitution
@@ -93,15 +93,15 @@ def encryption(image_in, block_size=16, iterations=50):
                     b2 = data[(i * width * block_size + x * width + j * block_size * y) * 3 + 2]
 
                     rt1 = sAesRndNumGen.getNewCouple(r1, r2, True)
-                    rt2 = r1 + r2 - rt1
+                    rt2 = int(r1) + int(r2) - rt1
 
                     gt1 = sAesRndNumGen.getNewCouple(g1, g2, True)
-                    gt2 = g1 + g2 - gt1
+                    gt2 = int(g1) + int(g2) - gt1
 
                     bt1 = sAesRndNumGen.getNewCouple(b1, b2, True)
-                    bt2 = b1 + b2 - bt1
+                    bt2 = int(b1) + int(b2) - bt1
 
-                    data[(i * width * block_size + p * width + j * block_size + q) * 3] = rt1;
+                    data[(i * width * block_size + p * width + j * block_size + q) * 3] = rt1
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = gt1
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = bt1
 
@@ -138,6 +138,9 @@ def encryption(image_in, block_size=16, iterations=50):
     plt.imshow(data)
     plt.show()
                     
-                    
-a = plt.imread(r"C:\Users\tingt\Desktop\ml\TPEnc\lena.png", 0)
-encryption(a, 16, iterations=1)
+
+if __name__ == '__main__':
+    a = plt.imread(r"C:\Users\tingt\Desktop\ml\TPEnc\lena.png", 0)
+    print(a.shape)
+    a = np.copy(a)
+    encryption(a, 16, iterations=1)
