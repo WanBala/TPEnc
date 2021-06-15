@@ -17,10 +17,11 @@ class AesRndNumGen:
         #     key_str = f.readline()
         # print('key:', key_str)
         # key = importKey(key_str)
-        # encrypt(key, self.data)
+        # encrypt(key, data)
 
     def next(self):
         self.ctr += 1
+        # print(ctr)
         return self.data[self.ctr - 1]
 
     def getNewCouple(self, p, q, enc):
@@ -54,13 +55,13 @@ class AesRndNumGen:
         return indices
 
 
-def encryption(image_in, block_size=16, iterations=50):
+def encryption(image_in, iterations=50, block_size=16):
+    print('Encrypting')
+    print(block_size, iterations)
     height, width, channel = image_in.shape
-    
-    c = image_in
+
     m, n = width // block_size, height // block_size
-    
-    permutataions = []
+
     data = image_in.reshape((-1,))
 
     totalRndForPermutation = iterations * n * m * block_size * block_size
@@ -68,10 +69,13 @@ def encryption(image_in, block_size=16, iterations=50):
     
     sAesRndNumGen = AesRndNumGen(totalRndForSubstitution)
     pAesRndNumGen = AesRndNumGen(totalRndForPermutation)
+<<<<<<< HEAD
 
 
     #pAesRndNumGen.ctr = totalRndForPermutation
     #sAesRndNumGen.ctr = totalRndForSubstitution
+=======
+>>>>>>> 9df7da81dbff4c83cac3062d1a3860cbe352b5e4
     
     for ccc in range(iterations):
         ### substitution
@@ -108,7 +112,7 @@ def encryption(image_in, block_size=16, iterations=50):
                     data[(i * width * block_size + x * width + j * block_size + y) * 3] = rt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
-
+        print('Hi')
         ### Permutataion
         for i in range(n):
             for j in range(m):

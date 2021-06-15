@@ -1,20 +1,19 @@
 import decrypt
+import encryption
 import matplotlib.pyplot as plt
 
 iterations = 1
-blocksize = 700
+blocksize = 200
 
-img = plt.imread('good.jpg')
+img = plt.imread('lena.png', 0)
 plt.figure(1)
 plt.imshow(img)
 img = img.copy()
 
-TPE = decrypt.TPEncryption(img)
-
 ans = input('[E]ncrypt or [D]ecrypt? ')
 if ans == 'E':
-    TPE.encrypt(iterations, blocksize)
+    encryption.encryption(img, iterations, blocksize)
 elif ans == 'D':
-    TPE.decrypt(iterations, blocksize)
+    decrypt.decrypt(img, iterations, blocksize)
 else:
     print('No such operation')
