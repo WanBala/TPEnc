@@ -13,11 +13,15 @@ class TPEncryption:
         m = self.img.shape[0] // block_size
         n = self.img.shape[1] // block_size
 
+        print(self.img.shape)
         self.data = self.img.reshape((-1,))
+        print(self.data.shape)
 
         totalRndForPermutation = num_of_iter * n * m * block_size * block_size
         totalRndForSubstitution = num_of_iter * n * m * \
             (block_size * block_size - (block_size * block_size) % 2) // 2 * 3
+
+        print(totalRndForPermutation, totalRndForSubstitution)
 
         # gen key
         sAesRndNumGen = AesRndNumGen(totalRndForSubstitution)
@@ -73,13 +77,13 @@ class TPEncryption:
                         b2 = self.data[(i * n * block_size + x * n + j * block_size + y) * 4 + 2]
 
                         rt1 = sAesRndNumGen.getNewCouple(r1, r2, False)
-                        rt2 = r1 + r2 - rt1
+                        rt2 = int(r1) + int(r2) - rt1
 
                         gt1 = sAesRndNumGen.getNewCouple(g1, g2, False)
-                        gt2 = g1 + g2 - gt1
+                        gt2 = int(g1) + int(g2) - gt1
 
                         bt1 = sAesRndNumGen.getNewCouple(b1, b2, False)
-                        bt2 = b1 + b2 - bt1
+                        bt2 = int(b1) + int(b2) - bt1
 
                         self.data[(i * n * block_size + p * n + j * block_size + q) * 4] = rt1
                         self.data[(i * n * block_size + p * n + j * block_size + q) * 4 + 1] = gt1
@@ -88,7 +92,9 @@ class TPEncryption:
                         self.data[(i * n * block_size + x * n + j * block_size + y) * 4] = rt2
                         self.data[(i * n * block_size + x * n + j * block_size + y) * 4 + 1] = gt2
                         self.data[(i * n * block_size + x * n + j * block_size + y) * 4 + 2] = bt2
-        plt.show(self.data)
+        plt.figure(2)
+        plt.imshow(self.data.reshape(self.img.shape))
+        plt.show()
         print("TPE decrypt FIN")
 
 
@@ -111,11 +117,12 @@ class AesRndNumGen:
 
     def next(self):
         self.ctr += 1
+        # print(self.ctr)
         return self.data[self.ctr - 1]
 
     def getNewCouple(self, p, q, enc):
         rnd = self.next()
-        sum = p + q
+        sum = int(p) + int(q)
         if sum <= 255:
             if enc:
                 rnd = (p + rnd) % (sum + 1)
