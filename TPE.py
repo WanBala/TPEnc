@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import sys
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
@@ -8,7 +9,6 @@ from tkinter.filedialog import askopenfilename
 def encrypt(img, iterations, block_size):
     print('Encrypting')
     height, width, channel = img.shape
-
     m, n = width // block_size, height // block_size
 
     data = img.reshape((-1,))
@@ -20,7 +20,7 @@ def encrypt(img, iterations, block_size):
     pAesRndNumGen = AesRndNumGen(totalRndForPermutation)
     
     for ccc in range(iterations):
-        ### substitution
+        # substitution
         for i in range(n):
             for j  in range(m):
                 for k in range(0, block_size * block_size - 1, 2):
@@ -55,7 +55,7 @@ def encrypt(img, iterations, block_size):
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
 
-        ### Permutataion
+        # permutataion
         for i in range(n):
             for j in range(m):
                 r_list = []
@@ -91,7 +91,6 @@ def encrypt(img, iterations, block_size):
 def decrypt(img, num_of_iter, block_size):
     print('Decrypting')
     height, width, channel = img.shape
-
     m, n = width // block_size, height // block_size
 
     data = img.reshape((-1,))
@@ -99,7 +98,6 @@ def decrypt(img, num_of_iter, block_size):
     totalRndForPermutation = num_of_iter * n * m * block_size * block_size
     totalRndForSubstitution = num_of_iter * n * m * \
         (block_size * block_size - (block_size * block_size) % 2) // 2 * 3
-
 
     # gen key
     sAesRndNumGen = AesRndNumGen(totalRndForSubstitution)
@@ -236,14 +234,20 @@ if __name__ == '__main__':
     blocksize = 200
     print(f'block_size: {blocksize}, iterations: {iterations}')
 
-    Tk().withdraw()
-    filename = askopenfilename()
+    root = Tk()
+    root.withdraw()
 
+    filename = askopenfilename()
     img = plt.imread(filename, 0)
+    img = img.copy()
+
+    # filter the alpha channel
+    if img.shape[2] > 3:
+        img = img[:, :, :3]
+
     plt.figure()
     plt.title("Original Image")
     plt.imshow(img)
-    img = img.copy()
 
     ans = input('[E]ncrypt or [D]ecrypt? ')
     if ans == 'E':
