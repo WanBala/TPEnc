@@ -1,11 +1,12 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
 
 
 def encrypt(img, iterations, block_size):
     print('Encrypting')
-    print(block_size, iterations)
     height, width, channel = img.shape
 
     m, n = width // block_size, height // block_size
@@ -80,7 +81,7 @@ def encrypt(img, iterations, block_size):
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b_list[permutation[k]]
         
     data = data.reshape(img.shape)
-    plt.figure(2)
+    plt.figure()
     plt.title("Encrypted Image")
     plt.imshow(data)
 
@@ -93,15 +94,12 @@ def decrypt(img, num_of_iter, block_size):
 
     m, n = width // block_size, height // block_size
 
-    print('image shape:', img.shape)
     data = img.reshape((-1,))
-    print('flatten shape:', data.shape)
 
     totalRndForPermutation = num_of_iter * n * m * block_size * block_size
     totalRndForSubstitution = num_of_iter * n * m * \
         (block_size * block_size - (block_size * block_size) % 2) // 2 * 3
 
-    print(totalRndForPermutation, totalRndForSubstitution)
 
     # gen key
     sAesRndNumGen = AesRndNumGen(totalRndForSubstitution)
@@ -172,16 +170,17 @@ def decrypt(img, num_of_iter, block_size):
                     data[(i * width * block_size + x * width + j * block_size + y) * 3] = rt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
-    plt.figure(3)
+    data = data.reshape(img.shape)
+    plt.figure()
     plt.title("Decrypted Image")
-    plt.imshow(data.reshape(img.shape))
-    plt.show()
-    print("TPE decrypt FIN")
+    plt.imshow(data)
+
+    return data
 
 
 class AesRndNumGen:
     def __init__(self, totalNeed):
-        print("AES init")
+        # print("AES init")
         self.ctr = 0
         self.data = np.zeros(totalNeed)
 
@@ -235,16 +234,24 @@ class AesRndNumGen:
 if __name__ == '__main__':
     iterations = 1
     blocksize = 200
+    print(f'block_size: {blocksize}, iterations: {iterations}')
 
-    img = plt.imread('lena.png', 0)
-    plt.figure(1)
+    Tk().withdraw()
+    filename = askopenfilename()
+
+    img = plt.imread(filename, 0)
+    plt.figure()
     plt.title("Original Image")
     plt.imshow(img)
     img = img.copy()
 
     ans = input('[E]ncrypt or [D]ecrypt? ')
-    if ans == 'E':#elif ans == 'D':
+    if ans == 'E':
         enImg = encrypt(img, iterations, blocksize)
-        decrypt(enImg, iterations, blocksize)
+        plt.imsave('encrypt.png', enImg)
+    elif ans == 'D':
+        deImg = decrypt(img, iterations, blocksize)
+        plt.imsave('decrypt.png', deImg)
     else:
         print('No such operation')
+    plt.show()
