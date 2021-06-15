@@ -6,6 +6,40 @@ import secrets
 import itertools
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+# import Crypto.Cipher.AES as AES
+
+def plot(img, title_name):
+    plt.figure()
+    plt.title(title_name)
+    plt.imshow(img)
+
+
+def thumbnail(img, block_size, img_name):
+    height, width, channel = img.shape
+    m, n = width // block_size, height // block_size
+    data = img.reshape((-1,))
+    for i in range(n):
+        for j in range(m):
+            r = 0
+            g = 0
+            b = 0
+            for k in range(block_size * block_size):
+                p = k // block_size
+                q = k % block_size
+                r += data[(i * width * block_size + p * width + j * block_size + q) * 3]
+                g += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1]
+                b += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2]
+
+            for k in range(block_size * block_size):
+                p = k // block_size
+                q = k % block_size
+                data[(i * width * block_size + p * width + j * block_size + q) * 3] = r // (block_size * block_size)
+                data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = g // (block_size * block_size)
+                data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b // (block_size * block_size)
+    data = data.reshape(img.shape)
+    plot(data, f"{img_name} thumbnail Image")
+    
+    return data
 
 
 def encrypt(img, iterations, block_size):
@@ -83,9 +117,9 @@ def encrypt(img, iterations, block_size):
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b_list[permutation[k]]
         
     data = data.reshape(img.shape)
-    plt.figure()
-    plt.title("Encrypted Image")
-    plt.imshow(data)
+    plot(data, "Encrypted Image")
+
+    plt.imsave('encrypt.png', data)
 
     return data
 
@@ -171,36 +205,47 @@ def decrypt(img, num_of_iter, block_size):
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
     data = data.reshape(img.shape)
-    plt.figure()
-    plt.title("Decrypted Image")
-    plt.imshow(data)
+    plot(data, "Decrypted Image")
 
+    plt.imsave('decrypt.png', data)
+    
     return data
 
 
 class AesRndNumGen:
     def __init__(self, totalNeed):
         # print("AES init")
+        print(totalNeed)
         self.ctr = 0
         self.data = np.zeros(totalNeed)
         self.data_length = totalNeed
 
-        if not os.path.isfile('./key.txt'):
-            key_str = self.generateKey()
-            #key_str = self.exportKey(key)
-            with open('./key.txt', "w", encoding='utf-8') as f:
-                f.write(key_str)
+        if not os.path.isfile('data.npy'):
+            self.data = np.random.randint(1e3, size=totalNeed)
+            # key_str = self.generateKey()
+            # key_str = self.exportKey(key)
+            # with open('./key.txt', "w", encoding='utf-8') as f:
+            #     f.write(str(self.data))
+            np.save('data.npy', self.data)
 
-        with open('./key.txt', "r", encoding='utf-8') as f:
-            key_str = f.readline()
+        # with open('./key.txt', "r", encoding='utf-8') as f:
+        #     self.data = int(f.readline())
+        self.data = np.load('data.npy')
 
-        print('key:', key_str)
-        self.importKey(key_str)
-        #encrypt(key, data)
+        # print('key:', key_str)
+        # # self.importKey(key_str)
+        # encrypt(key)
 
 
     def generateKey(self):
         return secrets.token_hex(32)
+
+    def encrypt(self, key):
+        aes = AES.new(key, AES.MODE_CTR)
+        ct_byte = aes.encrypt(self.data)
+        print(type(ct_byte))
+        print(len(ct_byte))
+        print(ct_byte)
 
     def importKey(self, key_str):
         key_cycles = itertools.cycle(key_str)
@@ -213,7 +258,7 @@ class AesRndNumGen:
 
     def next(self):
         self.ctr += 1
-        # print(ctr)
+        # print(self.ctr)
         return self.data[self.ctr - 1]
 
     def getNewCouple(self, p, q, enc):
@@ -243,13 +288,13 @@ class AesRndNumGen:
             permutation.append(self.next())
         len = block_size * block_size
         indices = [i for i in range(len)]
-        indices.sort()
+        permutation, indices = zip(*sorted(zip(permutation, indices)))
         return indices
 
 
 if __name__ == '__main__':
-    iterations = 1
-    blocksize = 200
+    iterations = 20
+    blocksize = 16
     print(f'block_size: {blocksize}, iterations: {iterations}')
 
     root = Tk()
@@ -263,17 +308,15 @@ if __name__ == '__main__':
     if img.shape[2] > 3:
         img = img[:, :, :3]
 
-    plt.figure()
-    plt.title("Original Image")
-    plt.imshow(img)
+    # Original
+    plot(img, "Original Image")
+    thumbImg = thumbnail(img, blocksize, 'Original')
 
-    ans = input('[E]ncrypt or [D]ecrypt? ')
-    if ans == 'E':
-        enImg = encrypt(img, iterations, blocksize)
-        plt.imsave('encrypt.png', enImg)
-    elif ans == 'D':
-        deImg = decrypt(img, iterations, blocksize)
-        plt.imsave('decrypt.png', deImg)
-    else:
-        print('No such operation')
+    # Encrypt
+    enImg = encrypt(img, iterations, blocksize)
+    thumbImg = thumbnail(enImg, blocksize, 'Encrypt')
+
+    # Decrypt
+    deImg = decrypt(enImg, iterations, blocksize)
+
     plt.show()
