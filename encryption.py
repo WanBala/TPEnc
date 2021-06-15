@@ -17,15 +17,16 @@ class AesRndNumGen:
         #     key_str = f.readline()
         # print('key:', key_str)
         # key = importKey(key_str)
-        # encrypt(key, self.data)
+        # encrypt(key, data)
 
     def next(self):
         self.ctr += 1
+        # print(ctr)
         return self.data[self.ctr - 1]
 
     def getNewCouple(self, p, q, enc):
         rnd = self.next()
-        sum = p + q
+        sum = int(p) + int(q)
         if sum <= 255:
             if enc:
                 rnd = (p + rnd) % (sum + 1)
@@ -54,13 +55,13 @@ class AesRndNumGen:
         return indices
 
 
-def encryption(image_in, block_size=16, iterations=50):
+def encryption(image_in, iterations=50, block_size=16):
+    print('Encrypting')
+    print(block_size, iterations)
     height, width, channel = image_in.shape
-    
-    c = image_in
+
     m, n = width // block_size, height // block_size
-    
-    permutataions = []
+
     data = image_in.reshape((-1,))
 
     totalRndForPermutation = iterations * n * m * block_size * block_size
@@ -68,10 +69,6 @@ def encryption(image_in, block_size=16, iterations=50):
     
     sAesRndNumGen = AesRndNumGen(totalRndForSubstitution)
     pAesRndNumGen = AesRndNumGen(totalRndForPermutation)
-
-
-    pAesRndNumGen.ctr = totalRndForPermutation
-    sAesRndNumGen.ctr = totalRndForSubstitution
     
     for ccc in range(iterations):
         ### substitution
@@ -93,22 +90,22 @@ def encryption(image_in, block_size=16, iterations=50):
                     b2 = data[(i * width * block_size + x * width + j * block_size * y) * 3 + 2]
 
                     rt1 = sAesRndNumGen.getNewCouple(r1, r2, True)
-                    rt2 = r1 + r2 - rt1
+                    rt2 = int(r1) + int(r2) - rt1
 
                     gt1 = sAesRndNumGen.getNewCouple(g1, g2, True)
-                    gt2 = g1 + g2 - gt1
+                    gt2 = int(g1) + int(g2) - gt1
 
                     bt1 = sAesRndNumGen.getNewCouple(b1, b2, True)
-                    bt2 = b1 + b2 - bt1
+                    bt2 = int(b1) + int(b2) - bt1
 
-                    data[(i * width * block_size + p * width + j * block_size + q) * 3] = rt1;
+                    data[(i * width * block_size + p * width + j * block_size + q) * 3] = rt1
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = gt1
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = bt1
 
                     data[(i * width * block_size + x * width + j * block_size + y) * 3] = rt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
-
+        print('Hi')
         ### Permutataion
         for i in range(n):
             for j in range(m):
@@ -137,7 +134,3 @@ def encryption(image_in, block_size=16, iterations=50):
     data = data.reshape((height, width, 3))
     plt.imshow(data)
     plt.show()
-                    
-                    
-a = plt.imread(r"C:\Users\tingt\Desktop\ml\TPEnc\lena.png", 0)
-encryption(a, 16, iterations=1)
