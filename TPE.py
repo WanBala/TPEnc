@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+import secrets
+import itertools
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
 
@@ -181,17 +183,33 @@ class AesRndNumGen:
         # print("AES init")
         self.ctr = 0
         self.data = np.zeros(totalNeed)
+        self.data_length = totalNeed
 
-        # if not os.path.isfile('./key.txt'):
-        #     key = generateKey()
-        #     key_str = exportKey(key)
-        #     with open('./key.txt') as f:
-        #         f.write(key_str)
-        # with open('./key.txt') as f:
-        #     key_str = f.readline()
-        # print('key:', key_str)
-        # key = importKey(key_str)
-        # encrypt(key, data)
+        if not os.path.isfile('./key.txt'):
+            key_str = self.generateKey()
+            #key_str = self.exportKey(key)
+            with open('./key.txt', "w", encoding='utf-8') as f:
+                f.write(key_str)
+
+        with open('./key.txt', "r", encoding='utf-8') as f:
+            key_str = f.readline()
+
+        print('key:', key_str)
+        self.importKey(key_str)
+        #encrypt(key, data)
+
+
+    def generateKey(self):
+        return secrets.token_hex(32)
+
+    def importKey(self, key_str):
+        key_cycles = itertools.cycle(key_str)
+        for i in range(self.data_length):
+            self.data[i] = int(next(key_cycles), 16)
+
+
+    def exportKey(self, key):
+        pass
 
     def next(self):
         self.ctr += 1
