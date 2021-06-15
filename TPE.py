@@ -17,7 +17,7 @@ def plot(img, title_name):
 def thumbnail(img, block_size, img_name):
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
-    data = img.reshape((-1,))
+    data = img.reshape((-1,)).copy()
     for i in range(n):
         for j in range(m):
             r = 0
@@ -37,7 +37,7 @@ def thumbnail(img, block_size, img_name):
                 data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = g // (block_size * block_size)
                 data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b // (block_size * block_size)
     data = data.reshape(img.shape)
-    plot(data, f"{img_name} thumbnail Image")
+    plot(data, img_name)
     
     return data
 
@@ -221,12 +221,12 @@ class AesRndNumGen:
         self.data_length = totalNeed
 
         if not os.path.isfile('data.npy'):
-            self.data = np.random.randint(1e3, size=totalNeed)
+            data = np.random.randint(1e3, size=totalNeed)
             # key_str = self.generateKey()
             # key_str = self.exportKey(key)
             # with open('./key.txt', "w", encoding='utf-8') as f:
             #     f.write(str(self.data))
-            np.save('data.npy', self.data)
+            np.save('data.npy', data)
 
         # with open('./key.txt', "r", encoding='utf-8') as f:
         #     self.data = int(f.readline())
@@ -294,7 +294,7 @@ class AesRndNumGen:
 
 if __name__ == '__main__':
     iterations = 20
-    blocksize = 16
+    blocksize = 64
     print(f'block_size: {blocksize}, iterations: {iterations}')
 
     root = Tk()
@@ -310,13 +310,13 @@ if __name__ == '__main__':
 
     # Original
     plot(img, "Original Image")
-    thumbImg = thumbnail(img, blocksize, 'Original')
+    thumbImg = thumbnail(img, blocksize, 'Original thumbnail Image')
 
     # Encrypt
     enImg = encrypt(img, iterations, blocksize)
-    thumbImg = thumbnail(enImg, blocksize, 'Encrypt')
+    thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
 
     # Decrypt
-    deImg = decrypt(enImg, iterations, blocksize)
+    _ = decrypt(enImg, iterations, blocksize)
 
     plt.show()
