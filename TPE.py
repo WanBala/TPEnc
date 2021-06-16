@@ -216,7 +216,7 @@ def decrypt(img, num_of_iter, block_size):
 class AesRndNumGen:
     def __init__(self, totalNeed):
         # print("AES init")
-        print(totalNeed)
+        # print(totalNeed)
         self.ctr = 0
         self.data = np.zeros(totalNeed)
         self.data_length = totalNeed
