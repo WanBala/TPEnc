@@ -325,16 +325,18 @@ def run(iterations, blocksize):
     # thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
 
     # Decrypt
-    _ = decrypt(enImg, iterations, blocksize)
+    # _ = decrypt(enImg, iterations, blocksize)
 
     # plt.show()
 
 
 if __name__ == '__main__':
-    iterations = [5,20,50,100,300]
+    iterations = [100,300]
     times = []
-    run(300, 16)
+    run(300, 64)
     for itr in iterations[::-1]:
-        times.append(timeit.timeit(run(itr, 16), number=10))
+        command = "run("+str(itr)+", 64)"
+        # print(command)
+        times.append(timeit.timeit(stmt=command, setup="from  __main__ import run", number=5)/5)
 
     print(times)
