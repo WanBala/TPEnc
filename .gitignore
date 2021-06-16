@@ -3,3 +3,4 @@ decrypt.png
 encrypt.png
 data.npy
 key.txt
+*.npy
