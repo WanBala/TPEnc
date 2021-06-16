@@ -227,10 +227,17 @@ class AesRndNumGen:
             # with open('./key.txt', "w", encoding='utf-8') as f:
             #     f.write(str(self.data))
             np.save('data.npy', data)
+            self.data = data
+        else:
+            self.data = np.load('data.npy')
+            if totalNeed > len(self.data):
+                data = np.random.randint(1e3, size=totalNeed)
+                np.save('data.npy', data)
+                self.data = data
 
         # with open('./key.txt', "r", encoding='utf-8') as f:
         #     self.data = int(f.readline())
-        self.data = np.load('data.npy')
+        # self.data = np.load('data.npy')
 
         # print('key:', key_str)
         # # self.importKey(key_str)
@@ -293,8 +300,8 @@ class AesRndNumGen:
 
 
 if __name__ == '__main__':
-    iterations = 20
-    blocksize = 64
+    iterations = 1
+    blocksize = 8
     print(f'block_size: {blocksize}, iterations: {iterations}')
 
     root = Tk()
