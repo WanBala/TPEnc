@@ -4,46 +4,47 @@ import os
 import sys
 import secrets
 import itertools
-from tkinter import Tk
-from tkinter.filedialog import askopenfilename
+import timeit
+# from tkinter import Tk
+# from tkinter.filedialog import askopenfilename
 # import Crypto.Cipher.AES as AES
 
-def plot(img, title_name):
-    plt.figure()
-    plt.title(title_name)
-    plt.imshow(img)
+# def plot(img, title_name):
+#     plt.figure()
+#     plt.title(title_name)
+#     plt.imshow(img)
 
 
-def thumbnail(img, block_size, img_name):
-    height, width, channel = img.shape
-    m, n = width // block_size, height // block_size
-    data = img.reshape((-1,)).copy()
-    for i in range(n):
-        for j in range(m):
-            r = 0
-            g = 0
-            b = 0
-            for k in range(block_size * block_size):
-                p = k // block_size
-                q = k % block_size
-                r += data[(i * width * block_size + p * width + j * block_size + q) * 3]
-                g += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1]
-                b += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2]
+# def thumbnail(img, block_size, img_name):
+#     height, width, channel = img.shape
+#     m, n = width // block_size, height // block_size
+#     data = img.reshape((-1,)).copy()
+#     for i in range(n):
+#         for j in range(m):
+#             r = 0
+#             g = 0
+#             b = 0
+#             for k in range(block_size * block_size):
+#                 p = k // block_size
+#                 q = k % block_size
+#                 r += data[(i * width * block_size + p * width + j * block_size + q) * 3]
+#                 g += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1]
+#                 b += data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2]
 
-            for k in range(block_size * block_size):
-                p = k // block_size
-                q = k % block_size
-                data[(i * width * block_size + p * width + j * block_size + q) * 3] = r // (block_size * block_size)
-                data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = g // (block_size * block_size)
-                data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b // (block_size * block_size)
-    data = data.reshape(img.shape)
-    plot(data, img_name)
+#             for k in range(block_size * block_size):
+#                 p = k // block_size
+#                 q = k % block_size
+#                 data[(i * width * block_size + p * width + j * block_size + q) * 3] = r // (block_size * block_size)
+#                 data[(i * width * block_size + p * width + j * block_size + q) * 3 + 1] = g // (block_size * block_size)
+#                 data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b // (block_size * block_size)
+#     data = data.reshape(img.shape)
+#     plot(data, img_name)
     
-    return data
+#     return data
 
 
 def encrypt(img, iterations, block_size):
-    print('Encrypting')
+    # print('Encrypting')
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
 
@@ -117,15 +118,15 @@ def encrypt(img, iterations, block_size):
                     data[(i * width * block_size + p * width + j * block_size + q) * 3 + 2] = b_list[permutation[k]]
         
     data = data.reshape(img.shape)
-    plot(data, "Encrypted Image")
+    # plot(data, "Encrypted Image")
 
-    plt.imsave('encrypt.png', data)
+    # plt.imsave('encrypt.png', data)
 
     return data
 
 
 def decrypt(img, num_of_iter, block_size):
-    print('Decrypting')
+    # print('Decrypting')
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
 
@@ -205,9 +206,9 @@ def decrypt(img, num_of_iter, block_size):
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 1] = gt2
                     data[(i * width * block_size + x * width + j * block_size + y) * 3 + 2] = bt2
     data = data.reshape(img.shape)
-    plot(data, "Decrypted Image")
+    # plot(data, "Decrypted Image")
 
-    plt.imsave('decrypt.png', data)
+    # plt.imsave('decrypt.png', data)
     
     return data
 
@@ -227,34 +228,40 @@ class AesRndNumGen:
             # with open('./key.txt', "w", encoding='utf-8') as f:
             #     f.write(str(self.data))
             np.save('data.npy', data)
-
+            self.data = data
+        else:
+            self.data = np.load('data.npy')
+            if totalNeed > len(self.data):
+                data = np.random.randint(1e3, size=totalNeed)
+                np.save('data.npy', data)
+                self.data = data
         # with open('./key.txt', "r", encoding='utf-8') as f:
         #     self.data = int(f.readline())
-        self.data = np.load('data.npy')
+        # self.data = np.load('data.npy')
 
         # print('key:', key_str)
         # # self.importKey(key_str)
         # encrypt(key)
 
 
-    def generateKey(self):
-        return secrets.token_hex(32)
+    # def generateKey(self):
+    #     return secrets.token_hex(32)
 
-    def encrypt(self, key):
-        aes = AES.new(key, AES.MODE_CTR)
-        ct_byte = aes.encrypt(self.data)
-        print(type(ct_byte))
-        print(len(ct_byte))
-        print(ct_byte)
+    # def encrypt(self, key):
+    #     aes = AES.new(key, AES.MODE_CTR)
+    #     ct_byte = aes.encrypt(self.data)
+    #     print(type(ct_byte))
+    #     print(len(ct_byte))
+    #     print(ct_byte)
 
-    def importKey(self, key_str):
-        key_cycles = itertools.cycle(key_str)
-        for i in range(self.data_length):
-            self.data[i] = int(next(key_cycles), 16)
+    # def importKey(self, key_str):
+    #     key_cycles = itertools.cycle(key_str)
+    #     for i in range(self.data_length):
+    #         self.data[i] = int(next(key_cycles), 16)
 
 
-    def exportKey(self, key):
-        pass
+    # def exportKey(self, key):
+    #     pass
 
     def next(self):
         self.ctr += 1
@@ -292,15 +299,16 @@ class AesRndNumGen:
         return indices
 
 
-if __name__ == '__main__':
-    iterations = 20
-    blocksize = 64
-    print(f'block_size: {blocksize}, iterations: {iterations}')
+def run(iterations, blocksize):
+    iterations = iterations
+    blocksize = blocksize
+    # print(f'block_size: {blocksize}, iterations: {iterations}')
 
-    root = Tk()
-    root.withdraw()
+    # root = Tk()
+    # root.withdraw()
 
-    filename = askopenfilename()
+    # filename = askopenfilename()
+    filename = 'lena.png'
     img = plt.imread(filename, 0)
     img = img.copy()
 
@@ -309,14 +317,24 @@ if __name__ == '__main__':
         img = img[:, :, :3]
 
     # Original
-    plot(img, "Original Image")
-    thumbImg = thumbnail(img, blocksize, 'Original thumbnail Image')
+    # plot(img, "Original Image")
+    # thumbImg = thumbnail(img, blocksize, 'Original thumbnail Image')
 
     # Encrypt
     enImg = encrypt(img, iterations, blocksize)
-    thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
+    # thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
 
     # Decrypt
     _ = decrypt(enImg, iterations, blocksize)
 
-    plt.show()
+    # plt.show()
+
+
+if __name__ == '__main__':
+    iterations = [5,20,50,100,300]
+    times = []
+    run(300, 16)
+    for itr in iterations[::-1]:
+        times.append(timeit.timeit(run(itr, 16), number=10))
+
+    print(times)
