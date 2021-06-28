@@ -2,10 +2,12 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+import cv2
 import secrets
 import itertools
 from tkinter import Tk
 from tkinter.filedialog import askopenfilename
+from exif import Image
 # import Crypto.Cipher.AES as AES
 
 def plot(img, title_name):
@@ -44,6 +46,7 @@ def thumbnail(img, block_size, img_name):
 
 def encrypt(img, iterations, block_size):
     print('Encrypting')
+    
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
 
@@ -119,13 +122,25 @@ def encrypt(img, iterations, block_size):
     data = data.reshape(img.shape)
     plot(data, "Encrypted Image")
 
-    plt.imsave('encrypt.png', data)
-
+    md = {'model': "TPE/{}/{}".format(iterations, block_size)}
+    filename = 'encrypt.jpg'
+    plt.imsave(filename, data, metadata=md)  ##不知道為啥沒有成功把metadata寫進去 這裡可以研究一下，如果成功就不用放接下來三行
+    editor = exif_editor(filename)
+    editor.set_etif(iterations, block_size)
+    editor.save()
     return data
 
 
 def decrypt(img, num_of_iter, block_size):
     print('Decrypting')
+
+    editor = exif_editor('encrypt.jpg')
+    if editor.is_valid == False:
+        raise Exception("Tag message isn't included")
+
+    num_of_iter, block_size = editor.get_information
+    print("block_size: {}, iterations: {}".format(block_size, num_of_iter))
+
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
 
@@ -292,6 +307,83 @@ class AesRndNumGen:
         return indices
 
 
+class exif_editor:
+    def __init__(self, param):
+        self.block_size = None
+        self.iterations = None
+        self.has_exif = False
+        self._exif = None
+        self.key_message = None
+        self._filename = 'encrypt.jpg'
+        self._filetype = "jpg"
+        if isinstance(param, np.ndarray):
+            self.load_stream(param)
+        else:
+            self.load_file(param)
+        self.parse_exif()
+
+
+    def load_file(self, filename):
+        self._filename = filename
+        with open(filename, "rb") as stream:
+            self._exif = Image(stream)
+
+        self.has_exif = self._exif.has_exif
+        self._filetype = self._filename.split(".")[-1]
+
+
+    def load_stream(self, array):
+        status, image_coded = cv2.imencode("." + self._filetype, array)
+        if status == False:
+            raise Exception("encoding array occurs mistake")
+        image_coded_bytes = image_coded.tobytes()
+        self._exif = Image(image_coded_bytes)
+        self.has_exif = self._exif.has_exif
+        
+
+    def parse_exif(self):
+        self.key_message = self._exif['model'] if self.has_exif else None
+        if self.has_exif != False:
+            self.iterations,  self.block_size = exif_editor.check_valid(self._exif['model'])
+
+    @property
+    def get_information(self):
+        return (self.iterations, self.block_size)
+
+    @staticmethod
+    def check_valid(data):
+        try:
+            split = data.split("/")
+            iterations = int(split[1])
+            block_size = int(split[2])
+        except:
+            iterations = None
+            block_size = None
+        return iterations, block_size
+
+    def is_valid(self):
+        if self.has_exif == False or self.block_size == None or self.iterations == None:
+            return False
+        return True
+    
+    def set_etif(self, iterations, block_size):
+        self.block_size = block_size
+        self.iterations = iterations
+        self.key_message = "TPE/{0}/{1}".format(self.iterations, self.block_size) # 格式是 TPE/iterations/block_size
+        print(self.key_message)
+        self._exif['model'] = self.key_message
+        print(self._exif['model'])
+
+
+
+    def save(self, filename=''):
+        name = filename if filename else self._filename
+        with open(name, 'wb') as new_image_file:
+            new_image_file.write(self._exif.get_file())
+        
+         
+
+
 if __name__ == '__main__':
     iterations = 20
     blocksize = 64
@@ -310,12 +402,12 @@ if __name__ == '__main__':
 
     # Original
     plot(img, "Original Image")
-    thumbImg = thumbnail(img, blocksize, 'Original thumbnail Image')
+    #thumbImg = thumbnail(img, blocksize, 'Original thumbnail Image')
 
     # Encrypt
     enImg = encrypt(img, iterations, blocksize)
-    thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
-
+    #thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
+    
     # Decrypt
     _ = decrypt(enImg, iterations, blocksize)
 
