@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import sys
+import cv2
 import secrets
 import itertools
 from tkinter import Tk
@@ -121,13 +122,9 @@ def encrypt(img, iterations, block_size):
     data = data.reshape(img.shape)
     plot(data, "Encrypted Image")
 
-    md = {'model' : 'TPE/{0}/{1}'.format(iterations, block_size)}
-    filename = 'encrypt.png'
-    #plt.imsave('encrypt.png', data, metadata=md)
-    im = PIL.Image.fromarray(data)
-    im.save("encrypt.png")
-    #plt.imsave('encrypt.png', data)
-
+    md = {'model': "TPE/{}/{}".format(iterations, block_size)}
+    filename = 'encrypt.jpg'
+    plt.imsave(filename, data, metadata=md)  ##不知道為啥沒有成功把metadata寫進去 這裡可以研究一下，如果成功就不用放接下來三行
     editor = exif_editor(filename)
     editor.set_etif(iterations, block_size)
     editor.save()
@@ -137,15 +134,13 @@ def encrypt(img, iterations, block_size):
 def decrypt(img, num_of_iter, block_size):
     print('Decrypting')
 
-    #editor = exif_editor('encrypt.png')
-    #if editor.is_valid == False:
-    #    raise Exception("Tag message isn't included")
-    img_data = PIL.Image.open('encrypt.png')
-    data = img_data._getexif()[272]
-    
-    block_size, num_of_iter = exif_editor.check_valid(data)
+    editor = exif_editor('encrypt.jpg')
+    if editor.is_valid == False:
+        raise Exception("Tag message isn't included")
+
+    num_of_iter, block_size = editor.get_information
     print("block_size: {}, iterations: {}".format(block_size, num_of_iter))
-    print(block_size, num_of_iter)
+
     height, width, channel = img.shape
     m, n = width // block_size, height // block_size
 
@@ -313,35 +308,58 @@ class AesRndNumGen:
 
 
 class exif_editor:
-    def __init__(self, filename):
+    def __init__(self, param):
+        self.block_size = None
+        self.iterations = None
+        self.has_exif = False
+        self._exif = None
+        self.key_message = None
+        self._filename = 'encrypt.jpg'
+        self._filetype = "jpg"
+        if isinstance(param, np.ndarray):
+            self.load_stream(param)
+        else:
+            self.load_file(param)
+        self.parse_exif()
+
+
+    def load_file(self, filename):
         self._filename = filename
         with open(filename, "rb") as stream:
             self._exif = Image(stream)
 
         self.has_exif = self._exif.has_exif
-        self.key_message = self._exif['model'] if self.has_exif else None
-        self.block_size = None
-        self.iterations = None
+        self._filetype = self._filename.split(".")[-1]
 
+
+    def load_stream(self, array):
+        status, image_coded = cv2.imencode("." + self._filetype, array)
+        if status == False:
+            raise Exception("encoding array occurs mistake")
+        image_coded_bytes = image_coded.tobytes()
+        self._exif = Image(image_coded_bytes)
+        self.has_exif = self._exif.has_exif
+        
+
+    def parse_exif(self):
+        self.key_message = self._exif['model'] if self.has_exif else None
         if self.has_exif != False:
-            try:
-                split = self.key_message.split("/")
-                self.block_size = int(split[1])
-                self.iterations = int(split[2])
-            except:
-                self.block_size = None
-                self.iterations = None
+            self.iterations,  self.block_size = exif_editor.check_valid(self._exif['model'])
+
+    @property
+    def get_information(self):
+        return (self.iterations, self.block_size)
 
     @staticmethod
     def check_valid(data):
         try:
-            split = data.key_message.split("/")
-            block_size = int(split[1])
-            iterations = int(split[2])
+            split = data.split("/")
+            iterations = int(split[1])
+            block_size = int(split[2])
         except:
-            block_size = None
             iterations = None
-        return block_size, iterations
+            block_size = None
+        return iterations, block_size
 
     def is_valid(self):
         if self.has_exif == False or self.block_size == None or self.iterations == None:
@@ -355,6 +373,8 @@ class exif_editor:
         print(self.key_message)
         self._exif['model'] = self.key_message
         print(self._exif['model'])
+
+
 
     def save(self, filename=''):
         name = filename if filename else self._filename
@@ -387,7 +407,7 @@ if __name__ == '__main__':
     # Encrypt
     enImg = encrypt(img, iterations, blocksize)
     #thumbImg = thumbnail(enImg, blocksize, 'Encrypt thumbnail Image')
-
+    
     # Decrypt
     _ = decrypt(enImg, iterations, blocksize)
 
